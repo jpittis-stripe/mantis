@@ -80,19 +80,6 @@ public class JobConnectorJob extends MantisJobProvider<String> {
     }
 
     public static void main(String[] args) throws JsonProcessingException {
-        // Properties that collectively improve stage to stage throughput.
-        System.setProperty("mantis.netty.maxFrameLength", Long.toString(5242880 * 10));
-        System.setProperty("mantis.w2w.toKeyThreads", "6");
-        System.setProperty("mantis.w2w.spsc", "false");
-        // 1000 is the default. This allows more events to accumulate between stages.
-        System.setProperty("mantis.w2w.toKeyMaxChunkSize", "5000");
-        // Similarly, increases the capacity of the buffer between stages.
-        System.setProperty("mantis.w2w.toKeyBuffer", "10000");
-        // Buffer on the inbound side between stages (affects stage 2 inbound drop rate).
-        System.setProperty("workerClient.buffer.size", "10000");
-        // Buffer on the inbound JobSource (affects MetricsIngest -> L7OutlierDetection drop rate).
-        System.setProperty("mantisClient.buffer.size", "10000");
-
         // To run locally we use the LocalJobExecutor
         LocalJobExecutorNetworked.execute(
             new JobConnectorJob().getJobInstance(),
