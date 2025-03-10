@@ -36,11 +36,7 @@ public class EchoStage implements ScalarComputation<MantisServerSentEvent, Strin
     @Override
     public Observable<String> call(Context context, Observable<MantisServerSentEvent> eventsO) {
         return eventsO
-                .map(MantisServerSentEvent::getEventAsString)
-                .map((event) -> {
-                    log.info("Received: {}", event);
-                    return event;
-                });
+                .map(MantisServerSentEvent::getEventAsString);
     }
 
     @Override
@@ -50,6 +46,7 @@ public class EchoStage implements ScalarComputation<MantisServerSentEvent, Strin
 
     public static ScalarToScalar.Config<MantisServerSentEvent, String> config() {
         return new ScalarToScalar.Config<MantisServerSentEvent, String>()
+                .concurrentInput(8)
                 .codec(Codecs.string());
     }
 

@@ -16,8 +16,11 @@ task execute(type: JavaExec) {
 dependencies {
     api libraries.mantisShaded
 
+    implementation project(':mantis-common')
     implementation project(':mantis-runtime')
+    implementation project(':mantis-runtime-executor')
     implementation project(':mantis-connectors:mantis-connector-job-source')
+    implementation project(':mantis-control-plane:mantis-control-plane-client')
 
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12

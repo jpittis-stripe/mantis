@@ -62,6 +62,7 @@ public class MantisSourceJobConnector {
     private static final String ZK_LEADER_PATH = "mantis.zookeeper.leader.announcement.path";
 
     public MantisSourceJobConnector(boolean configureDefaults) {
+        configureDefaults = true;
         if (configureDefaults) {
             props = defaultProperties();
         } else {

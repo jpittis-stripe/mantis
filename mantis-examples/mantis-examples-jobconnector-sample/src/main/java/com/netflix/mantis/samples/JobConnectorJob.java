@@ -26,13 +26,16 @@ import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.sink.Sinks;
+import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.skife.config.ConfigurationObjectFactory;
+
+import java.util.*;
+
 import lombok.extern.slf4j.Slf4j;
+import io.mantisrx.server.core.CoreConfiguration;
+import io.mantisrx.server.core.Configurations;
 
 
 /**
@@ -77,20 +80,23 @@ public class JobConnectorJob extends MantisJobProvider<String> {
     }
 
     public static void main(String[] args) throws JsonProcessingException {
-        Map<String, Object> targetMap = new HashMap<>();
-        List<JobSource.TargetInfo> targetInfos = new ArrayList<>();
-
-        JobSource.TargetInfo targetInfo = new JobSource.TargetInfoBuilder().withClientId("abc")
-                .withSourceJobName("SyntheticSourceJob")
-                .withQuery("select country from stream where status==500")
-                .build();
-        targetInfos.add(targetInfo);
-        targetMap.put("targets", targetInfos);
-        ObjectMapper mapper = new ObjectMapper();
-        String target = mapper.writeValueAsString(targetMap);
+        // Properties that collectively improve stage to stage throughput.
+        System.setProperty("mantis.netty.maxFrameLength", Long.toString(5242880 * 10));
+        System.setProperty("mantis.w2w.toKeyThreads", "6");
+        System.setProperty("mantis.w2w.spsc", "false");
+        // 1000 is the default. This allows more events to accumulate between stages.
+        System.setProperty("mantis.w2w.toKeyMaxChunkSize", "5000");
+        // Similarly, increases the capacity of the buffer between stages.
+        System.setProperty("mantis.w2w.toKeyBuffer", "10000");
+        // Buffer on the inbound side between stages (affects stage 2 inbound drop rate).
+        System.setProperty("workerClient.buffer.size", "10000");
+        // Buffer on the inbound JobSource (affects MetricsIngest -> L7OutlierDetection drop rate).
+        System.setProperty("mantisClient.buffer.size", "10000");
 
         // To run locally we use the LocalJobExecutor
-        LocalJobExecutorNetworked.execute(new JobConnectorJob().getJobInstance(),
-                new Parameter(MantisSourceJobConnector.MANTIS_SOURCEJOB_TARGET_KEY, target));
+        LocalJobExecutorNetworked.execute(
+            new JobConnectorJob().getJobInstance(),
+            new Parameter(
+                "target", "{\"targets\":[{\"sourceJobName\":\"Whatever\",\"criterion\":\"*\"}]}"));
     }
 }
